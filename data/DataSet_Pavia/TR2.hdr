@@ -1,0 +1,24 @@
+ENVI
+description = {
+  Classification Image created from input ROIs [Mon Feb 21 16:10:18 2005]}
+samples = 1024
+lines   = 1024
+bands   = 1
+header offset = 0
+file type = ENVI Classification
+data type = 1
+interleave = bsq
+sensor type = Unknown
+classes = 9
+class lookup = {
+   0,   0,   0,   0,   0, 255,   0, 139,   0,   0, 255,   0, 216, 191, 216,
+ 255, 255, 255, 255,   0,   0, 255, 255,   0,   0, 255, 255}
+class names = {
+ Unclassified, Acqua [Blue] 180 points, Alberi [Green3] 348 points, 
+ Prato [Green] 323 points, Strade [Thistle] 987 points, 
+ Ombra [White] 750 points, Edifici in Tegola (rossi) [Red] 2271 points, 
+ Edifici Grigi [Yellow] 568 points, Edifici chiari [Cyan] 275 points}
+byte order = 0
+wavelength units = Unknown
+band names = {
+ Class Image from ROIs}

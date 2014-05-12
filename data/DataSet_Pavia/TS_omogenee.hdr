@@ -1,0 +1,29 @@
+ENVI
+description = {
+  Classification Image created from input ROIs [Wed Apr 20 14:54:53 2005]}
+samples = 1024
+lines   = 1024
+bands   = 1
+header offset = 0
+file type = ENVI Classification
+data type = 1
+interleave = bsq
+sensor type = Unknown
+classes = 9
+class lookup = {
+   0,   0,   0, 255,   0, 255, 176,  48,  96,  46, 139,  87, 160,  32, 240,
+ 255, 127,  80, 127, 255, 212, 218, 112, 214, 160,  82,  45}
+class names = {
+ Unclassified, Acqua TS omogenee [Magenta] 150 points, 
+ Alberi TS omogenee [Maroon] 250 points, 
+ Prato TS omogenee [Sea Green] 160 points, 
+ Strade TS omogenee [Purple] 381 points, 
+ Ombra TS omogenee [Coral] 325 points, 
+ Edifici in Tegola TS omogenee [Aquamarine] 1040 points, 
+ Edifici grigi TS omogenee [Orchid] 250 points, 
+ Edifici chiari TS omogenee [Sienna] 100 points}
+byte order = 0
+map info = {UTM, 1.000, 1.000, 512414.000, 5003634.300, 7.0000000000e-001, 7.0000000000e-001, 32, North, WGS-84, units=Meters}
+wavelength units = Unknown
+band names = {
+ Class Image from ROIs}

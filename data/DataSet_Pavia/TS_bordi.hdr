@@ -1,0 +1,26 @@
+ENVI
+description = {
+  Classification Image created from input ROIs [Thu Feb 10 11:54:33 2005]}
+samples = 1024
+lines   = 1024
+bands   = 1
+header offset = 0
+file type = ENVI Classification
+data type = 1
+interleave = bsq
+sensor type = Unknown
+classes = 9
+class lookup = {
+   0,   0,   0, 127, 255,   0, 238,   0,   0, 205,   0,   0, 139,   0,   0,
+   0, 238,   0,   0, 205,   0,   0,   0, 238,   0,   0, 205}
+class names = {
+ Unclassified, Acqua TS bordo [Chartreuse] 55 points, 
+ Alberi TS bordo [Red1] 95 points, Prato TS bordo [Red2] 90 points, 
+ Strade TS bordo [Red3] 182 points, Ombra TS bordo [Green1] 297 points, 
+ Edifici in tegola TS bordo [Green2] 442 points, 
+ Edifici grigi TS bordo [Blue1] 167 points, 
+ Edifici chiari TS bordo [Blue2] 98 points}
+byte order = 0
+wavelength units = Unknown
+band names = {
+ Class Image from ROIs}
