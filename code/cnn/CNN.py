@@ -184,7 +184,7 @@ def load_data(dataset):
 		print '... loading data'
 		# Load the dataset
 		f = gzip.open(dataset, 'rb')
-		train_set, valid_set, test_set = cPickle.load(f)
+		train_set, valid_set, test_set, test_bordi, test_omogenee = cPickle.load(f)
 		f.close()
 
 	except IOError:
@@ -219,9 +219,12 @@ def load_data(dataset):
 	test_set_x, test_set_y = shared_dataset(test_set)
 	valid_set_x, valid_set_y = shared_dataset(valid_set)
 	train_set_x, train_set_y = shared_dataset(train_set)
+	test_bordi_x, test_bordi_y = shared_dataset(test_bordi)
+	test_omogenee_x, test_omogenee_y = shared_dataset(test_omogenee)
 
 	rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y),
-			(test_set_x, test_set_y)]
+			(test_set_x, test_set_y), (test_bordi_x, test_bordi_y),
+			(test_omogenee_x, test_omogenee_y)]
 	return rval
 
 
@@ -247,16 +250,21 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 	train_set_x, train_set_y = datasets[0]
 	valid_set_x, valid_set_y = datasets[1]
 	test_set_x, test_set_y = datasets[2]
+	test_bordi_x, test_bordi_y = datasets[3]
+	test_omogenee_x, test_omogenee_y = datasets[4]
 
-	print type(train_set_x)
 
 	# compute number of minibatches for training, validation and testing
 	n_train_batches = train_set_x.get_value(borrow=True).shape[0]
 	n_valid_batches = valid_set_x.get_value(borrow=True).shape[0]
 	n_test_batches = test_set_x.get_value(borrow=True).shape[0]
+	n_test_bordi_batches = test_bordi_x.get_value(borrow=True).shape[0]
+	n_test_omogenee_batches = test_omogenee_x.get_value(borrow=True).shape[0]
 	n_train_batches /= batch_size
 	n_valid_batches /= batch_size
 	n_test_batches /= batch_size
+	n_test_bordi_batches /= batch_size
+	n_test_omogenee_batches /= batch_size
 
 	# allocate symbolic variables for the data
 	index = T.lscalar()  # index to a [mini]batch
@@ -301,6 +309,17 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 			 givens={
 				x: test_set_x[index * batch_size: (index + 1) * batch_size],
 				y: test_set_y[index * batch_size: (index + 1) * batch_size]})
+
+	test_bordi_model = theano.function([index], layer3.errors(y),
+			 givens={
+				x: test_bordi_x[index * batch_size: (index + 1) * batch_size],
+				y: test_bordi_y[index * batch_size: (index + 1) * batch_size]})
+
+	test_omogenee_model = theano.function([index], layer3.errors(y),
+			 givens={
+				x: test_omogenee_x[index * batch_size: (index + 1) * batch_size],
+				y: test_omogenee_y[index * batch_size: (index + 1) * batch_size]})
+
 
 	validate_model = theano.function([index], layer3.errors(y),
 			givens={
@@ -392,6 +411,23 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 						   'model %f %%') %
 						  (epoch, minibatch_index + 1, n_train_batches,
 						   test_score * 100.))
+
+					# test it on the test bordi set
+					test_losses = [test_bordi_model(i) for i in xrange(n_test_bordi_batches)]
+					test_score = numpy.mean(test_losses)
+					print(('     epoch %i, minibatch %i/%i, test bordi error of best '
+						   'model %f %%') %
+						  (epoch, minibatch_index + 1, n_train_batches,
+						   test_score * 100.))
+
+					# test it on the test omogenee set
+					test_losses = [test_omogenee_model(i) for i in xrange(n_test_omogenee_batches)]
+					test_score = numpy.mean(test_losses)
+					print(('     epoch %i, minibatch %i/%i, test omogenee error of best '
+						   'model %f %%') %
+						  (epoch, minibatch_index + 1, n_train_batches,
+						   test_score * 100.))
+
 
 			if patience <= iter:
 				done_looping = True
