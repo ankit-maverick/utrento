@@ -1,7 +1,7 @@
 import sys
 import os
 import gzip
-
+import cPickle
 
 import numpy as np
 import time
@@ -21,8 +21,8 @@ class LogisticRegression(object):
 	def __init__(self, input, n_in, n_out):
 
 		# Parameters
-		self.W = theano.shared(value=np.zeros((n_in, n_out)), dtype=theano.config.floatx, name='W', borrow=True)
-		self.b = theano.shared(value=np.zeros((n_out,)), dtype=theano.config.floatx, name='b', borrow=True)
+		self.W = theano.shared(value=np.zeros((n_in, n_out), dtype=theano.config.floatX), name='W', borrow=False)
+		self.b = theano.shared(value=np.zeros((n_out,), dtype=theano.config.floatX), name='b', borrow=False)
 
 		self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
 		self.y_pred = T.argmax(self.p_y_given_x, axis=1)
@@ -50,6 +50,8 @@ class LogisticRegression(object):
 			raise TypeError('y should have the same shape as self.y_pred',
 				('y', target.type, 'y_pred', self.y_pred.type))
 		# check if y is of the correct datatype
+		print y[:20]
+		print self.y_pred[:20]
 		if y.dtype.startswith('int'):
 			# the T.neq operator returns a vector of 0s and 1s, where 1
 			# represents a mistake in prediction
@@ -88,11 +90,11 @@ class HiddenLayer(object):
 			if activation == theano.tensor.nnet.sigmoid:
 				W_values *= 4
 
-			W = theano.shared(value=W_values, name='W', borrow=True)
+			W = theano.shared(value=W_values, name='W', borrow=False)
 
 		if b is None:
 			b_values = np.zeros((n_out,), dtype=theano.config.floatX)
-			b = theano.shared(value=b_values, name='b', borrow=True)
+			b = theano.shared(value=b_values, name='b', borrow=False)
 
 		self.W = W
 		self.b = b
@@ -142,10 +144,11 @@ class LeNetConvPoolLayer(object):
 		W_bound = np.sqrt(6. / (fan_in + fan_out))
 		self.W = theano.shared(np.asarray(rng.uniform(low=-W_bound,
 							   high=W_bound, size=filter_shape),
-							   dtype=theano.config.floatX), borrow=True)
+							   dtype=theano.config.floatX), borrow=False)
 
 		b_values = np.zeros((filter_shape[0],), dtype=theano.config.floatX)
-		self.b = theano.shared(value=b_values, borrow=True)
+		self.b = theano.shared(value=b_values, borrow=False)
+
 
 		# convolve input feature maps with filters
 		conv_out = conv.conv2d(input=input, filters=self.W,
@@ -179,7 +182,7 @@ def load_data(dataset):
 		if data_dir == "" and not os.path.isfile(dataset):
 			# Check if dataset is in the data directory.
 			new_path = os.path.join(os.path.split(__file__)[0], "..", "data", dataset)
-			if os.path.isfile(new_path) or data_file == 'dataset.pkl.gz':
+			if os.path.isfile(new_path) or data_file == 'datasets.pkl.gz':
 				dataset = new_path
 		print '... loading data'
 		# Load the dataset
@@ -197,7 +200,7 @@ def load_data(dataset):
 	#the number of rows in the input. It should give the target
 	#target to the example with the same index in the input.
 
-	def shared_dataset(data_xy, borrow=True):
+	def shared_dataset(data_xy, borrow=False):
 		""" Function that loads the dataset into shared variables
 
 		The reason we store our dataset in shared variables is to allow
@@ -207,20 +210,20 @@ def load_data(dataset):
 		variable) would lead to a large decrease in performance.
 		"""
 		data_x, data_y = data_xy
-		shared_x = theano.shared(numpy.asarray(data_x,
+		shared_x = theano.shared(np.asarray(data_x,
 											   dtype=theano.config.floatX),
 								 borrow=borrow)
-		shared_y = theano.shared(numpy.asarray(data_y,
+		shared_y = theano.shared(np.asarray(data_y,
 											   dtype=theano.config.floatX),
 								 borrow=borrow)
 
 		return shared_x, T.cast(shared_y, 'int32')
 
-	test_set_x, test_set_y = shared_dataset(test_set)
-	valid_set_x, valid_set_y = shared_dataset(valid_set)
-	train_set_x, train_set_y = shared_dataset(train_set)
-	test_bordi_x, test_bordi_y = shared_dataset(test_bordi)
-	test_omogenee_x, test_omogenee_y = shared_dataset(test_omogenee)
+	test_set_x, test_set_y = shared_dataset((test_set[0], test_set[1].astype(np.int64)))
+	valid_set_x, valid_set_y = shared_dataset((valid_set[0], valid_set[1].astype(np.int64)))
+	train_set_x, train_set_y = shared_dataset((train_set[0], train_set[1].astype(np.int64)))
+	test_bordi_x, test_bordi_y = shared_dataset((test_bordi[0], test_bordi[1].astype(np.int64)))
+	test_omogenee_x, test_omogenee_y = shared_dataset((test_omogenee[0], test_omogenee[1].astype(np.int64)))
 
 	rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y),
 			(test_set_x, test_set_y), (test_bordi_x, test_bordi_y),
@@ -228,8 +231,8 @@ def load_data(dataset):
 	return rval
 
 
-def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
-				 nkerns=[20, 50], batch_size=100):
+def evaluate_CNN(learning_rate=0.005, n_epochs=200, dataset='/home/ankit/utrento/data/datasets.pkl.gz',
+				 nkerns=[30, 80], batch_size=20):
 	"""
 	learning_rate : float
 		learning rate used (factor for the stochastic gradient)
@@ -244,7 +247,7 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 		number of kernels on each layer
 	"""
 
-	rng = np.random.RandomState(11)
+	rng = np.random.RandomState(1)
 	datasets = load_data(dataset)
 
 	train_set_x, train_set_y = datasets[0]
@@ -268,7 +271,7 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 
 	# allocate symbolic variables for the data
 	index = T.lscalar()  # index to a [mini]batch
-	x = T.matrix('x')   # the data is presented as rasterized images
+	x = T.tensor4('x')   # the data is presented as rasterized images
 	y = T.ivector('y')  # the labels are presented as 1D vector of
 						# [int] labels
 
@@ -279,7 +282,8 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 	######################
 	print '... building the model'
 
-	layer0_input = x.reshape((batch_size, ishape[0], ishape[1], ishape[2]))
+	#layer0_input = x.reshape((batch_size, ishape[0], ishape[1], ishape[2]))
+	layer0_input = x
 
 	# Construct the first convolutional pooling layer:
 	layer0 = LeNetConvPoolLayer(rng, input=layer0_input,
@@ -364,7 +368,7 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 								  # check every epoch
 
 	best_params = None
-	best_validation_loss = numpy.inf
+	best_validation_loss = np.inf
 	best_iter = 0
 	test_score = 0.
 	start_time = time.clock()
@@ -387,13 +391,13 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 				# compute zero-one loss on validation set
 				validation_losses = [validate_model(i) for i
 									 in xrange(n_valid_batches)]
-				this_validation_loss = numpy.mean(validation_losses)
+				this_validation_loss = np.mean(validation_losses)
 				print('epoch %i, minibatch %i/%i, validation error %f %%' % \
 					  (epoch, minibatch_index + 1, n_train_batches, \
 					   this_validation_loss * 100.))
 
 				# if we got the best validation score until now
-				if this_validation_loss < best_validation_loss:
+				if this_validation_loss <= best_validation_loss:
 
 					#improve patience if loss improvement is good enough
 					if this_validation_loss < best_validation_loss *  \
@@ -406,7 +410,7 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 
 					# test it on the test set
 					test_losses = [test_model(i) for i in xrange(n_test_batches)]
-					test_score = numpy.mean(test_losses)
+					test_score = np.mean(test_losses)
 					print(('     epoch %i, minibatch %i/%i, test error of best '
 						   'model %f %%') %
 						  (epoch, minibatch_index + 1, n_train_batches,
@@ -414,7 +418,7 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 
 					# test it on the test bordi set
 					test_losses = [test_bordi_model(i) for i in xrange(n_test_bordi_batches)]
-					test_score = numpy.mean(test_losses)
+					test_score = np.mean(test_losses)
 					print(('     epoch %i, minibatch %i/%i, test bordi error of best '
 						   'model %f %%') %
 						  (epoch, minibatch_index + 1, n_train_batches,
@@ -422,7 +426,7 @@ def evaluate_CNN(learning_rate=0.1, n_epochs=200, dataset='dataset.pkl.gz',
 
 					# test it on the test omogenee set
 					test_losses = [test_omogenee_model(i) for i in xrange(n_test_omogenee_batches)]
-					test_score = numpy.mean(test_losses)
+					test_score = np.mean(test_losses)
 					print(('     epoch %i, minibatch %i/%i, test omogenee error of best '
 						   'model %f %%') %
 						  (epoch, minibatch_index + 1, n_train_batches,
